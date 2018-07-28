@@ -6,6 +6,8 @@ const db = new sqlite3.Database(
   process.env.TEST_DATABASE || './database.sqlite'
 );
 
+const timesheetsRouter = require('./timesheets.js');
+
 employeesRouter.param('employeeId', (req, res, next, employeeId) => {
   const sql = 'SELECT * FROM Employee WHERE Employee.id = $employeeId';
   const values = { $employeeId: employeeId };
@@ -20,6 +22,8 @@ employeesRouter.param('employeeId', (req, res, next, employeeId) => {
     }
   });
 });
+
+employeesRouter.use('/:employeeId/timesheets', timesheetsRouter);
 
 employeesRouter.get('/', (req, res, next) => {
   db.all(
@@ -63,7 +67,7 @@ employeesRouter.post('/', (req, res, next) => {
       db.get(
         `SELECT * FROM Employee WHERE Employee.id = ${this.lastID}`,
         (error, employee) => {
-          res.status(201).json({ employee: employee });
+          res.status(201).send({ employee: employee });
         }
       );
     }
@@ -111,9 +115,7 @@ employeesRouter.delete('/:employeeId', (req, res, next) => {
   const sql = `UPDATE Employee SET
               is_current_employee = 0
               WHERE Employee.id = $employeeId`;
-  const values = {
-    $employeeId: req.params.employeeId
-  };
+  const values = { $employeeId: req.params.employeeId };
 
   db.run(sql, values, error => {
     if (error) {
